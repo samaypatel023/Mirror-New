@@ -50,6 +50,7 @@ class AriaDownloadHelper:
         update_all_messages()
 
     def __onDownloadComplete(self, api: API, gid):
+        LOGGER.info(f"onDownloadComplete: {gid}")
         dl = getDownloadByGid(gid)
         download = aria2.get_download(gid)
         if download.followed_by_ids:
@@ -64,8 +65,13 @@ class AriaDownloadHelper:
             update_all_messages()
             LOGGER.info(f'Changed gid from {gid} to {new_gid}')
         else:
-            if dl:
-                threading.Thread(target=dl.getListener().onDownloadComplete).start()
+            if dl: threading.Thread(target=dl.getListener().onDownloadComplete).start()
+
+    @new_thread
+    def __onDownloadPause(self, api, gid):
+        LOGGER.info(f"onDownloadPause: {gid}")
+        dl = getDownloadByGid(gid)
+        dl.getListener().onDownloadError('Download stopped by user!')
 
     @new_thread
     def __onDownloadStopped(self, api, gid):
@@ -76,8 +82,8 @@ class AriaDownloadHelper:
 
     @new_thread
     def __onDownloadError(self, api, gid):
+        sleep(0.5) #sleep for split second to ensure proper dl gid update from onDownloadComplete
         LOGGER.info(f"onDownloadError: {gid}")
-        sleep(0.5)  # sleep for split second to ensure proper dl gid update from onDownloadComplete
         dl = getDownloadByGid(gid)
         download = aria2.get_download(gid)
         error = download.error_message
@@ -88,6 +94,7 @@ class AriaDownloadHelper:
     def start_listener(self):
         aria2.listen_to_notifications(threaded=True, on_download_start=self.__onDownloadStarted,
                                       on_download_error=self.__onDownloadError,
+                                      on_download_pause=self.__onDownloadPause,
                                       on_download_stop=self.__onDownloadStopped,
                                       on_download_complete=self.__onDownloadComplete,
                                       timeout=1)

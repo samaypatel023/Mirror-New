@@ -14,6 +14,16 @@ def clean_download(path: str):
         shutil.rmtree(path)
 
 
+def exit_clean_up(signal, frame):
+    try:
+        LOGGER.info("Please wait, while we clean up the downloads and stop running downloads")
+        clean_all()
+        sys.exit(0)
+    except KeyboardInterrupt:
+        LOGGER.warning("Force Exiting before the cleanup finishes!")
+        sys.exit(1)
+
+
 def start_cleanup():
     try:
         shutil.rmtree(DOWNLOAD_DIR)
@@ -28,17 +38,6 @@ def clean_all():
         shutil.rmtree(DOWNLOAD_DIR)
     except FileNotFoundError:
         pass
-
-
-def exit_clean_up(signal, frame):
-    try:
-        LOGGER.info("Please wait, while we clean up the downloads and stop running downloads")
-        clean_all()
-        sys.exit(0)
-    except KeyboardInterrupt:
-        LOGGER.warning("Force Exiting before the cleanup finishes!")
-        sys.exit(1)
-
 
 def get_path_size(path):
     if os.path.isfile(path):

@@ -19,6 +19,8 @@ from urllib.parse import urlparse
 
 import lk21
 import requests
+import logging
+from js2py import EvalJs
 from bs4 import BeautifulSoup
 from js2py import EvalJs
 from lk21.extractors.bypasser import Bypass
@@ -170,6 +172,44 @@ def mediafire(url: str) -> str:
     page = BeautifulSoup(requests.get(link).content, 'lxml')
     info = page.find('a', {'aria-label': 'Download file'})
     dl_url = info.get('href')
+    return dl_url
+
+
+def uptobox(url: str) -> str:
+    try:
+        link = re.findall(r'\bhttps?://.*uptobox\.com\S+', url)[0]
+    except IndexError:
+        raise DirectDownloadLinkException("`No Uptobox links found`\n")
+    if UPTOBOX_TOKEN is None:
+        logging.error('UPTOBOX_TOKEN not provided!')
+    else:
+        check = 'https://uptobox.com/api/user/me?token=%s' % (UPTOBOX_TOKEN)
+        request = requests.get(check)
+        info = request.json()
+        premium = info["data"]["premium"]
+        try:
+            link = re.findall(r'\bhttp?://.*uptobox\.com/dl\S+', url)[0]
+            logging.info('Uptobox direct link')
+            dl_url = url
+        except:
+            if premium == 1:
+                file_id = re.findall(r'\bhttps?://.*uptobox\.com/(\w+)', url)[0]
+                file_link = 'https://uptobox.com/api/link?token=%s&file_code=%s' % (UPTOBOX_TOKEN, file_id)
+                req = requests.get(file_link)
+                result = req.json()
+                dl_url = result['data']['dlLink']
+            else:
+                file_id = re.findall(r'\bhttps?://.*uptobox\.com/(\w+)', url)[0]
+                file_link = 'https://uptobox.com/api/link?token=%s&file_code=%s' % (UPTOBOX_TOKEN, file_id)
+                req = requests.get(file_link)
+                result = req.json()
+                waiting_time = result["data"]["waiting"] + 1
+                waiting_token = result["data"]["waitingToken"]
+                _countdown(waiting_time)
+                file_link = 'https://uptobox.com/api/link?token=%s&file_code=%s&waitingToken=%s' % (UPTOBOX_TOKEN, file_id, waiting_token)
+                req = requests.get(file_link)
+                result = req.json()
+                dl_url = result['data']['dlLink']
     return dl_url
 
 

@@ -34,3 +34,11 @@ torrentool
 urllib3
 youtube_dl
 yt-dlp
+python-telegram-bot
+lxml
+messages
+progress
+pybase64
+lk21
+megasdkrestclient
+speedtest-cli
